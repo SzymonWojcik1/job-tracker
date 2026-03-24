@@ -15,22 +15,28 @@ public class Main {
         JobService jobService = new JobService();
 
         userInput(scanner, jobService);
+        System.out.println("Goodbye !");
     }
 
     public static void userInput(Scanner scanner, JobService js){
         boolean end = true;
-        int userChoice;
+        int userChoice = -1;
         System.out.println("Welcome to the job application thingy app");
         System.out.println("What do you want to do ?");
         while (end){
+            System.out.println("---- Job Tracker ----");
             System.out.println("0 - exit");
             System.out.println("1 - show all jobs");
             System.out.println("2 - add");
             System.out.println("3 - update");
             System.out.println("4 - delete");
-            userChoice = Integer.parseInt(scanner.nextLine());
-
-            switch (userChoice){
+            System.out.println("Choice :");
+            try{
+                userChoice = Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException e){
+                System.err.println("Invalid input, please enter a number");
+            }
+            switch (userChoice) {
                 case 0:
                     end = false;
                     break;
@@ -46,84 +52,167 @@ public class Main {
                 case 4:
                     deleteJob(scanner, js);
                     break;
+                default:
+                    System.out.println("Invalid choice");
+                    break;
             }
         }
     }
 
     public static void showAllJobs(JobService js){
         List<JobApplication> lsJA = js.getAll();
-        for (int i=0; i<lsJA.size();i++){
+        if (lsJA.isEmpty()) {
+            System.out.println("List is empty, no job applications");
+            return;
+        }
+        int size = lsJA.size();
+        for (int i=0; i<size;i++){
             System.out.println(i+" - "+lsJA.get(i).detailToString());
         }
     }
 
     public static void createJob(Scanner application, JobService jobService){
-        String company;
-        String position;
-        String dateApplied;
-        LocalDate dateAppliedParse;
+        String company = askNonEmptyString(application, "Name of the company : ");
+        String position = askNonEmptyString(application, "Position in the company : "+ company);
+        LocalDate date = askDate(application);
+        String notes = askNonEmptyString(application, "Notes : ");
 
-        System.out.println("Company name");
-        company = application.nextLine();
-
-        System.out.println("Position");
-        position = application.nextLine();
-
-        System.out.println("Day of application (YYYY-MM-DD) press enter if today");
-        dateApplied = application.nextLine();
-        if (dateApplied.isBlank()){
-            dateAppliedParse = LocalDate.now();
-        }else {
-            dateAppliedParse = LocalDate.parse(dateApplied);
-        }
-
-        System.out.println("Notes");
-        String notes = application.nextLine();
-
-        JobApplication jobApplication = new JobApplication(company, position, Status.APPLIED, dateAppliedParse, notes);
+        JobApplication jobApplication = new JobApplication(company, position, Status.APPLIED, date, notes);
         System.out.println(jobApplication);
         jobService.add(jobApplication);
     }
 
+
     public static void updateStatus(Scanner scanner, JobService jobService){
-        int numJob;
-        int numStatus;
-        Status status = Status.APPLIED;
-
-        System.out.println("Lequel voudriez vous changer ?");
+        int numJob = -1;
+        int numStatus = -1;
+        Status status;
         List<JobApplication> jobApplications = jobService.getAll();
-        for (int i=0 ;i<jobApplications.size();i++){
-            System.out.println(i+" - "+ jobApplications.get(i));
+
+        while (true) {
+            System.out.println("Which job application would you like change");
+            for (int i=0 ;i<jobApplications.size();i++){
+                System.out.println(i+" - "+ jobApplications.get(i));
+            }
+            try {
+                numJob = Integer.parseInt(scanner.nextLine());
+            }catch (NumberFormatException e) {
+                System.err.println("Invalid input, please enter a number");
+            }
+
+            if (isIndexValid(jobApplications, numJob)){
+                break;
+            } else {
+                System.out.println("Index is out of bound");
+            }
         }
-        numJob = Integer.parseInt(scanner.nextLine());
 
-        System.out.println("What's the new status ?");
-        System.out.println("0 - Interview");
-        System.out.println("1 - Rejected");
-        System.out.println("2 - Offer");
-        numStatus = Integer.parseInt((scanner.nextLine()));
+        while (true) {
+            System.out.println("What's the new status ?");
+            System.out.println("0 - Interview");
+            System.out.println("1 - Rejected");
+            System.out.println("2 - Offer");
+            System.out.println("3 - Keep the same status : "+jobApplications.get(numJob).getStatus());
+            try {
+                numStatus = Integer.parseInt((scanner.nextLine()));
+            }catch (NumberFormatException e){
+                System.err.println("Invalid input, please enter a number");
+            }
+            if (numStatus > 3 || numStatus < 0) {
+                System.out.println("index out of bound please enter a number between 0 and 3");
+            }else {
+                break;
+            }
 
+        }
         status = switch (numStatus) {
             case 0 -> Status.INTERVIEW;
             case 1 -> Status.REJECTED;
             case 2 -> Status.OFFER;
-            default -> status;
+            case 3 -> jobApplications.get(numJob).getStatus();
+            default -> Status.APPLIED;
         };
-
         jobService.updateStatus(numJob, status);
+        System.out.println("Updated job: " + jobApplications.get(numJob).detailToString());
     }
 
     public static void deleteJob(Scanner scanner, JobService js) {
-        String numJob;
-        int numJobParse;
-
-        System.out.println("What job app to delete ? enter if none");
-        showAllJobs(js);
-        numJob = scanner.nextLine();
-        if (numJob.isBlank()){
+        List<JobApplication> jobApplications = js.getAll();
+        if (jobApplications.isEmpty()) {
+            System.out.println("No job applications to delete");
             return;
         }
-        numJobParse = Integer.parseInt(numJob);
-        js.delete(numJobParse);
+
+        for (int i = 0; i < jobApplications.size(); i++) {
+            System.out.println(i + " - " + jobApplications.get(i).detailToString());
+        }
+
+        int num = askInt(scanner, "Select job to delete", 0, jobApplications.size() - 1);
+        if (num == -1) {
+            System.out.println("Delete cancelled");
+            return;
+        }
+
+        js.delete(num);
+        System.out.println("Job deleted successfully");
+    }
+
+    public static String askNonEmptyString(Scanner scanner, String message){
+        String string;
+        do {
+            System.out.println(message);
+            string = scanner.nextLine();
+            if (string.isBlank()) {
+                System.out.println("Statement is blank");
+            }
+        } while (string.isBlank());
+        return string;
+    }
+
+    public static LocalDate askDate(Scanner scanner) {
+        while (true) {
+            System.out.println("Day of application (YYYY-MM-DD) press enter if today");
+            String date = scanner.nextLine();
+
+            if (date.isBlank()) {
+                return LocalDate.now();
+            }
+
+            try {
+                return LocalDate.parse(date);
+            } catch (Exception e) {
+                System.out.println("Invalid format please use YYYY-MM-DD");
+            }
+        }
+    }
+
+    public static int askInt(Scanner scanner, String message, int min, int max) {
+        while (true) {
+            System.out.println(message + " (between " + min + " and " + max + ", press Enter if none)");
+            String input = scanner.nextLine();
+
+            if (input.isBlank()) {
+                return -1;
+            }
+
+            try {
+                int i = Integer.parseInt(input);
+                if (i < min || i > max) {
+                    System.out.println("Invalid number. Please select a number between " + min + " and " + max);
+                } else {
+                    return i;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input, please enter a number");
+            }
+        }
+    }
+
+    public static boolean isIndexValid(List<JobApplication> applications,int index) {
+        if (applications.isEmpty()) {
+            return false;
+        } else if (index >= applications.size() || index < 0) {
+            return false;
+        } else {return true;}
     }
 }
