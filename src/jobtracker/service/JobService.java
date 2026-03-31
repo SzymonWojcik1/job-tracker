@@ -9,6 +9,14 @@ import java.util.List;
 public class JobService {
     private List<JobApplication> applications = new ArrayList<JobApplication>();
 
+    public JobService(List<JobApplication> applications) {
+        this.applications = new ArrayList<>(applications);
+    }
+
+    public JobService() {
+        this.applications = new ArrayList<>();
+    }
+
     public void add(JobApplication app){
         if(app==null){
             System.out.println("Can't add a null job application");

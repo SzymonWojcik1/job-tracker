@@ -2,6 +2,7 @@ package jobtracker;
 
 import jobtracker.model.JobApplication;
 import jobtracker.model.Status;
+import jobtracker.repository.JobFileRepository;
 import jobtracker.service.JobService;
 
 import java.time.LocalDate;
@@ -12,10 +13,17 @@ public class Main {
     public static void main(String[] args) {
         System.out.println("Hello, World!");
         Scanner scanner = new Scanner(System.in);
-        JobService jobService = new JobService();
+
+        JobFileRepository repository = new JobFileRepository();
+
+        List<JobApplication> jobs = repository.loadFromFile();
+
+        JobService jobService = new JobService(jobs);
 
         userInput(scanner, jobService);
+        repository.saveToFile(jobService.getAll());
         System.out.println("Goodbye !");
+        scanner.close();
     }
 
     public static void userInput(Scanner scanner, JobService js){
