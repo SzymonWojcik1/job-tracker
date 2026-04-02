@@ -1,9 +1,11 @@
 package jobtracker.service;
 
+import jobtracker.comparator.JobApplicationComparator;
 import jobtracker.model.JobApplication;
 import jobtracker.model.Status;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class JobService {
@@ -41,6 +43,10 @@ public class JobService {
         else {
             System.out.println("Index is out of bound");
         }
+    }
+
+    public void sortApplications() {
+        applications.sort(new JobApplicationComparator());
     }
 
     private boolean isIndexValid(int index) {

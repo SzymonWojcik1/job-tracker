@@ -8,14 +8,15 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JobFileRepository {
+public class CsvRepository implements JobRepository{
     private static final String FILE_PATH = "data/jobs.csv";
 
-    public void saveToFile(List<JobApplication> jobs) {
+    @Override
+    public void saveToFile(List<JobApplication> jobApplications) {
         try(BufferedWriter bw = new BufferedWriter(new FileWriter(FILE_PATH))) {
             bw.write("COMPANY;POSITION;STATUS;DATE_APPLIED;NOTES");
             bw.newLine();
-            for (JobApplication job : jobs) {
+            for (JobApplication job : jobApplications) {
                 bw.write(job.getCompany()+";"+job.getPosition()+";"+job.getStatus()+";"+job.getDateApplied()+";"+job.getNotes());
                 bw.newLine();
             }
@@ -25,6 +26,7 @@ public class JobFileRepository {
 
     }
 
+    @Override
     public List<JobApplication> loadFromFile() {
         String company;
         String position;

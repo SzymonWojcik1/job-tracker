@@ -2,7 +2,9 @@ package jobtracker;
 
 import jobtracker.model.JobApplication;
 import jobtracker.model.Status;
-import jobtracker.repository.JobFileRepository;
+import jobtracker.repository.CsvRepository;
+import jobtracker.repository.JobRepository;
+import jobtracker.repository.JsonRepository;
 import jobtracker.service.JobService;
 
 import java.time.LocalDate;
@@ -11,17 +13,20 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("Hello, World!");
         Scanner scanner = new Scanner(System.in);
 
-        JobFileRepository repository = new JobFileRepository();
+        JobRepository csvRepository = new CsvRepository();
+        JobRepository jsonRepository = new JsonRepository();
 
-        List<JobApplication> jobs = repository.loadFromFile();
+        List<JobApplication> jobs = csvRepository.loadFromFile();
 
         JobService jobService = new JobService(jobs);
 
         userInput(scanner, jobService);
-        repository.saveToFile(jobService.getAll());
+
+        csvRepository.saveToFile(jobService.getAll());
+        jsonRepository.saveToFile(jobService.getAll());
+
         System.out.println("Goodbye !");
         scanner.close();
     }
@@ -38,6 +43,7 @@ public class Main {
             System.out.println("2 - add");
             System.out.println("3 - update");
             System.out.println("4 - delete");
+            System.out.println("5 - sort applications");
             System.out.println("Choice :");
             try{
                 userChoice = Integer.parseInt(scanner.nextLine());
@@ -59,6 +65,11 @@ public class Main {
                     break;
                 case 4:
                     deleteJob(scanner, js);
+                    break;
+                case 5:
+                    js.sortApplications();
+                    System.out.println("Applications sorted by date -> status -> company name-> position");
+                    showAllJobs(js);
                     break;
                 default:
                     System.out.println("Invalid choice");
